@@ -259,6 +259,7 @@ class Ecobee(object):
         cool_temp: int,
         heat_temp: int,
         hold_type: str = "nextTransition",
+        hold_hours: str = "2",
     ) -> None:
         """Sets the fan mode (auto, minontime, on)."""
         body = {
@@ -271,13 +272,20 @@ class Ecobee(object):
                     "type": "setHold",
                     "params": {
                         "holdType": hold_type,
-                        "coolHoldTemp": int(cool_temp * 10),
-                        "heatHoldTemp": int(heat_temp * 10),
                         "fan": fan_mode,
                     },
                 }
             ],
         }
+
+        # Set optional parameters in body, only fill in *HoldTemp if they are non-zero
+        if cool_temp != 0:
+            body["functions"][0]["params"]["coolHoldTemp"] = int(cool_temp * 10)
+        if heat_temp != 0:
+            body["functions"][0]["params"]["heatHoldTemp"] = int(heat_temp * 10)
+        if hold_type == "holdHours":
+            body["functions"][0]["params"]["holdHours"] = hold_hours
+
         log_msg_action = "set fan mode"
 
         try:
@@ -353,7 +361,7 @@ class Ecobee(object):
             ],
         }
 
-        if hold_type is not "holdHours":
+        if hold_type != "holdHours":
             del body["functions"][0]["params"]["holdHours"]
 
         log_msg_action = "set climate hold"
